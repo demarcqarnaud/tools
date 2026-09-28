@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronicles of Darkness Dice Roller</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f3f4f6;
+        }
+        .rpg-title {
+            font-family: 'Cinzel', serif;
+        }
+        /* Die visual states */
+        .die-success {
+            font-weight: 700;
+            color: #34d399; /* Emerald */
+            background-color: rgba(52, 211, 153, 0.12);
+            border-color: rgba(52, 211, 153, 0.4);
+        }
+        .die-reroll {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+            color: #fbbf24; /* Amber */
+            border-color: rgba(251, 191, 36, 0.5);
+            position: relative;
+        }
+        .die-reroll::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            background-color: #fbbf24;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #fbbf24;
+        }
+        .die-normal {
+            color: #9ca3af;
+            border-color: rgba(156, 163, 175, 0.2);
+            background-color: rgba(31, 41, 55, 0.5);
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between selection:bg-amber-500 selection:text-black">
+
+    <header class="bg-gray-900 border-b border-gray-800 py-5 px-4 shadow-xl">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-br from-amber-600 to-amber-800 p-3 rounded-xl shadow-inner border border-amber-500/30 text-amber-200">
+                    <i class="fa-solid fa-dice-d20 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="rpg-title text-2xl sm:text-3xl font-bold tracking-wider text-amber-500">Chronicles of Darkness</h1>
+                    <p class="text-xs sm:text-sm text-gray-400">Storyteller System 10-Sided Dice Engine</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-xs text-amber-400/90 bg-amber-950/40 border border-amber-800/30 px-3 py-1.5 rounded-lg">
+                <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                <span>Success: 8+ | Exceptional: 5+</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Controls Sidebar -->
+        <section class="md:col-span-1 bg-gray-900/90 backdrop-blur border border-gray-800 rounded-2xl p-5 shadow-2xl flex flex-col justify-between space-y-6">
+            <div class="space-y-5">
+                <h2 class="rpg-title text-lg font-semibold text-gray-200 border-b border-gray-800 pb-3 flex items-center justify-between">
+                    <span>Dice Pool</span>
+                    <span class="text-xs font-sans font-normal text-amber-500"><i class="fa-solid fa-sliders"></i> Config</span>
+                </h2>
+
+                <!-- Number of Dice Input -->
+                <div class="space-y-2">
+                    <label for="diceCount" class="block text-sm font-medium text-gray-300">Number of Dice (1 - 50)</label>
+                    <div class="relative">
+                        <input type="number" id="diceCount" min="1" max="50" value="10" 
+                            class="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-lg font-semibold transition shadow-inner">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-xs text-gray-500 font-mono">d10</div>
+                    </div>
+                </div>
+
+                <!-- Again Dropdown -->
+                <div class="space-y-2">
+                    <label for="againValue" class="block text-sm font-medium text-gray-300">Again Rule</label>
+                    <select id="againValue" 
+                        class="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm transition shadow-inner">
+                        <option value="10" selected>10-Again (Standard)</option>
+                        <option value="9">9-Again</option>
+                        <option value="8">8-Again</option>
+                        <option value="7">7-Again (Unbounded)</option>
+                        <option value="none">None (-)</option>
+                    </select>
+                </div>
+
+                <!-- Rote Checkbox -->
+                <div class="pt-2">
+                    <label class="relative flex items-center p-3 rounded-xl bg-gray-950/60 border border-gray-800 cursor-pointer hover:border-gray-700 transition group">
+                        <input type="checkbox" id="roteCheckbox" 
+                            class="w-5 h-5 rounded bg-gray-900 border-gray-700 text-amber-600 focus:ring-amber-500 focus:ring-offset-gray-900 cursor-pointer">
+                        <div class="ml-3 select-none">
+                            <span class="block text-sm font-medium text-gray-200 group-hover:text-amber-400 transition">Rote Quality</span>
+                            <span class="block text-xs text-gray-400">Reroll failed dice (< 8) once</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Roll Button -->
+            <button id="rollButton" 
+                class="w-full bg-gradient-to-r from-amber-600 hover:from-amber-500 to-amber-700 hover:to-amber-600 text-gray-950 font-bold py-4 px-6 rounded-xl shadow-lg transform active:scale-95 transition flex items-center justify-center space-x-3 rpg-title tracking-wider text-lg border border-amber-400/40 cursor-pointer">
+                <i id="rollIcon" class="fa-solid fa-dice text-xl"></i>
+                <i id="rollSpinner" class="fa-solid fa-spinner fa-spin text-xl hidden"></i>
+                <span>ROLL DICE</span>
+            </button>
+        </section>
+
+        <!-- Results & Breakdown Section -->
+        <section class="md:col-span-2 bg-gray-900/90 backdrop-blur border border-gray-800 rounded-2xl p-5 shadow-2xl flex flex-col justify-between space-y-6">
+            
+            <!-- Summary Banner -->
+            <div id="summaryBanner" class="bg-gray-950 border border-gray-800 rounded-xl p-5 shadow-inner flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="text-center sm:text-left">
+                    <span class="text-xs uppercase tracking-wider text-gray-400 font-semibold block">Final Outcome</span>
+                    <div id="outcomeText" class="rpg-title text-2xl sm:text-3xl font-bold text-gray-400 mt-0.5">Ready to Roll</div>
+                </div>
+                <div class="flex items-center gap-4 bg-gray-900/90 px-5 py-3 rounded-xl border border-gray-800">
+                    <div class="text-center">
+                        <span class="text-xs uppercase text-gray-400 block font-medium">Successes</span>
+                        <span id="totalSuccessCount" class="text-3xl font-bold text-emerald-400">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Round Logs Area -->
+            <div class="flex-grow flex flex-col space-y-3">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-400 border-b border-gray-800 pb-2">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-list-ol text-amber-500"></i> ROUND-BY-ROUND BREAKDOWN</span>
+                    <span>Legend: <strong class="text-emerald-400 font-bold">Success</strong> | <span class="underline text-amber-400">Reroll Trigger</span></span>
+                </div>
+                
+                <div id="roundsContainer" class="bg-gray-950 border border-gray-800 rounded-xl p-4 flex-grow min-h-[240px] max-h-[360px] overflow-y-auto space-y-3 font-mono text-sm">
+                    <div class="text-gray-500 text-center py-16 italic font-sans flex flex-col items-center justify-center space-y-2">
+                        <i class="fa-solid fa-hand-pointer text-2xl text-gray-600"></i>
+                        <span>Configure your dice pool and click Roll Dice to start.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Legend Info -->
+            <div class="text-xs text-gray-500 text-center flex flex-wrap items-center justify-center gap-4 pt-1">
+                <span class="flex items-center space-x-1.5">
+                    <span class="inline-block w-3 h-3 bg-emerald-500/20 border border-emerald-500/40 rounded"></span>
+                    <span class="text-gray-400">Success (8+)</span>
+                </span>
+                <span class="flex items-center space-x-1.5">
+                    <span class="inline-block w-3 h-3 bg-amber-500/20 border border-amber-500/40 rounded underline relative"></span>
+                    <span class="text-gray-400">Reroll Trigger (Again / Rote Failure)</span>
+                </span>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-900 border-t border-gray-800 py-4 px-4 text-center text-xs text-gray-500">
+        Chronicles of Darkness Dice Roller &bull; Built for Storytellers and Players
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rollButton = document.getElementById('rollButton');
+            const diceCountInput = document.getElementById('diceCount');
+            const againValueSelect = document.getElementById('againValue');
+            const roteCheckbox = document.getElementById('roteCheckbox');
+            const roundsContainer = document.getElementById('roundsContainer');
+            const totalSuccessCountElem = document.getElementById('totalSuccessCount');
+            const outcomeTextElem = document.getElementById('outcomeText');
+            const rollIcon = document.getElementById('rollIcon');
+            const rollSpinner = document.getElementById('rollSpinner');
+
+            // Secure random d10 generator (1 to 10)
+            function rollDie() {
+                return Math.floor(Math.random() * 10) + 1;
+            }
+
+            rollButton.addEventListener('click', () => {
+                try {
+                    let initialDice = parseInt(diceCountInput.value, 10);
+                    if (isNaN(initialDice) || initialDice < 1) {
+                        initialDice = 1;
+                        diceCountInput.value = 1;
+                    } else if (initialDice > 50) {
+                        initialDice = 50;
+                        diceCountInput.value = 50;
+                    }
+
+                    const againSetting = againValueSelect.value;
+                    const isRote = roteCheckbox.checked;
+
+                    rollButton.disabled = true;
+                    rollIcon.classList.add('hidden');
+                    rollSpinner.classList.remove('hidden');
+
+                    setTimeout(() => {
+                        try {
+                            executeSimulation(initialDice, againSetting, isRote);
+                        } catch (err) {
+                            console.error("Error executing simulation:", err);
+                        } finally {
+                            rollButton.disabled = false;
+                            rollIcon.classList.remove('hidden');
+                            rollSpinner.classList.add('hidden');
+                        }
+                    }, 200);
+
+                } catch (error) {
+                    console.error("Button click error:", error);
+                    rollButton.disabled = false;
+                    rollIcon.classList.remove('hidden');
+                    rollSpinner.classList.add('hidden');
+                }
+            });
+
+            function executeSimulation(initialCount, againSetting, isRote) {
+                let againThreshold = againSetting !== 'none' ? parseInt(againSetting, 10) : null;
+                let simulationRounds = [];
+                let grandSuccesses = 0;
+
+                // --- ROUND 1 ---
+                let r1Rolls = [];
+                let r1AgainCount = 0;
+                let r1FailCount = 0;
+
+                for (let i = 0; i < initialCount; i++) {
+                    let val = rollDie();
+                    let success = val >= 8;
+                    if (success) grandSuccesses++;
+
+                    let isAgainTrig = againThreshold !== null && val >= againThreshold;
+                    let isRoteTrig = isRote && !success;
+
+                    if (isAgainTrig) r1AgainCount++;
+                    if (!success) r1FailCount++;
+
+                    r1Rolls.push({
+                        value: val,
+                        success: success,
+                        trig: isAgainTrig || isRoteTrig
+                    });
+                }
+
+                simulationRounds.push({
+                    title: `Round 1 (${initialCount} dice)`,
+                    rolls: r1Rolls
+                });
+
+                // --- ROUND 2 & SUBSEQUENT ROUNDS ---
+                let currentRoundIndex = 2;
+
+                if (isRote) {
+                    // When Rote is active, Round 2 combines BOTH Rote rerolls (failed dice) AND Again rerolls!
+                    let combinedPoolSize = r1FailCount + r1AgainCount;
+                    
+                    let r2Rolls = [];
+                    let r2AgainTriggers = 0;
+
+                    for (let i = 0; i < combinedPoolSize; i++) {
+                        let val = rollDie();
+                        let success = val >= 8;
+                        if (success) grandSuccesses++;
+
+                        let isAgainTrig = againThreshold !== null && val >= againThreshold;
+                        if (isAgainTrig) r2AgainTriggers++;
+
+                        r2Rolls.push({
+                            value: val,
+                            success: success,
+                            trig: isAgainTrig
+                        });
+                    }
+
+                    simulationRounds.push({
+                        title: `Round 2 - Rote & Again Rerolls (${combinedPoolSize} dice)`,
+                        rolls: r2Rolls
+                    });
+
+                    // Subsequent rounds for further Again triggers generated from Round 2 onwards
+                    let activeAgainPool = r2AgainTriggers;
+                    currentRoundIndex = 3;
+
+                    while (activeAgainPool > 0 && currentRoundIndex <= 50) {
+                        let nextRolls = [];
+                        let nextAgainTriggers = 0;
+
+                        for (let i = 0; i < activeAgainPool; i++) {
+                            let val = rollDie();
+                            let success = val >= 8;
+                            if (success) grandSuccesses++;
+
+                            let isAgainTrig = againThreshold !== null && val >= againThreshold;
+                            if (isAgainTrig) nextAgainTriggers++;
+
+                            nextRolls.push({
+                                value: val,
+                                success: success,
+                                trig: isAgainTrig
+                            });
+                        }
+
+                        simulationRounds.push({
+                            title: `Round ${currentRoundIndex} - Again Rerolls (${activeAgainPool} dice)`,
+                            rolls: nextRolls
+                        });
+
+                        activeAgainPool = nextAgainTriggers;
+                        currentRoundIndex++;
+                    }
+
+                } else {
+                    // No Rote, only Again rules starting in Round 2
+                    let activeAgainPool = r1AgainCount;
+
+                    while (activeAgainPool > 0 && currentRoundIndex <= 50) {
+                        let nextRolls = [];
+                        let nextAgainTriggers = 0;
+
+                        for (let i = 0; i < activeAgainPool; i++) {
+                            let val = rollDie();
+                            let success = val >= 8;
+                            if (success) grandSuccesses++;
+
+                            let isAgainTrig = againThreshold !== null && val >= againThreshold;
+                            if (isAgainTrig) nextAgainTriggers++;
+
+                            nextRolls.push({
+                                value: val,
+                                success: success,
+                                trig: isAgainTrig
+                            });
+                        }
+
+                        simulationRounds.push({
+                            title: `Round ${currentRoundIndex} - Again Rerolls (${activeAgainPool} dice)`,
+                            rolls: nextRolls
+                        });
+
+                        activeAgainPool = nextAgainTriggers;
+                        currentRoundIndex++;
+                    }
+                }
+
+                renderResultsUI(simulationRounds, grandSuccesses);
+            }
+
+            function renderResultsUI(rounds, totalSuccesses) {
+                totalSuccessCountElem.textContent = totalSuccesses;
+                totalSuccessCountElem.classList.add('scale-125', 'text-amber-300');
+                setTimeout(() => {
+                    totalSuccessCountElem.classList.remove('scale-125', 'text-amber-300');
+                }, 300);
+
+                if (totalSuccesses >= 5) {
+                    outcomeTextElem.innerHTML = '<i class="fa-solid fa-crown text-amber-400 mr-2"></i>Exceptional Success!';
+                    outcomeTextElem.className = "rpg-title text-xl sm:text-2xl font-bold text-amber-400 mt-0.5 flex items-center";
+                } else if (totalSuccesses >= 1) {
+                    outcomeTextElem.innerHTML = '<i class="fa-solid fa-check text-emerald-400 mr-2"></i>Success';
+                    outcomeTextElem.className = "rpg-title text-xl sm:text-2xl font-bold text-emerald-400 mt-0.5 flex items-center";
+                } else {
+                    outcomeTextElem.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-500 mr-2"></i>Failure';
+                    outcomeTextElem.className = "rpg-title text-xl sm:text-2xl font-bold text-rose-500 mt-0.5 flex items-center";
+                }
+
+                roundsContainer.innerHTML = '';
+
+                rounds.forEach((round) => {
+                    const roundDiv = document.createElement('div');
+                    roundDiv.className = "p-3 bg-gray-900/60 border border-gray-800/80 rounded-lg space-y-1.5";
+
+                    const headerRow = document.createElement('div');
+                    headerRow.className = "flex items-center justify-between text-xs text-gray-400 font-sans";
+                    headerRow.innerHTML = `<span>${round.title}</span>`;
+                    roundDiv.appendChild(headerRow);
+
+                    const diceListContainer = document.createElement('div');
+                    diceListContainer.className = "flex flex-wrap items-center gap-2 pt-1";
+
+                    round.rolls.forEach((d, idx) => {
+                        const dieBadge = document.createElement('span');
+                        let isSuccess = d.value >= 8;
+                        
+                        let badgeClasses = "inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold border transition ";
+                        
+                        if (isSuccess) {
+                            badgeClasses += "die-success ";
+                        } else {
+                            badgeClasses += "die-normal ";
+                        }
+
+                        if (d.trig) {
+                            badgeClasses += "die-reroll ";
+                        }
+
+                        dieBadge.className = badgeClasses;
+                        dieBadge.textContent = d.value;
+
+                        let tooltip = `Die: ${d.value}`;
+                        if (isSuccess) tooltip += " | Success (8+)";
+                        if (d.trig) tooltip += " | Reroll Trigger";
+                        dieBadge.title = tooltip;
+
+                        diceListContainer.appendChild(dieBadge);
+
+                        if (idx < round.rolls.length - 1) {
+                            const comma = document.createElement('span');
+                            comma.className = "text-gray-600 font-mono text-xs select-none";
+                            comma.textContent = ",";
+                            diceListContainer.appendChild(comma);
+                        }
+                    });
+
+                    roundDiv.appendChild(diceListContainer);
+                    roundsContainer.appendChild(roundDiv);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
